@@ -1,4 +1,11 @@
 <?php
+
+// mengetahui semua error yg terjadi
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
+
+
 //koneksi database
 $server = "localhost";
 $user = "root";
@@ -9,31 +16,101 @@ $koneksi = mysqli_connect($server, $user, $pass, $database)or die(mysqli_error($
 
 // jika tombol simpan di klik 
 
-if(isset($_POST['bsimpan]'])) 
+if(isset($_POST['bsimpan'])) 
 {
-    $simpan = mysqli_query($koneksi, "INSERT INTO tmhs (nim, nama, alamat, prodi)
+    // pengujian apakah data akan  diedit tau disimpan 
+        
+        if($_GET['hal'] == "edit")
+        {
+            // data akan diedit
+            $edit = mysqli_query($koneksi, "UPDATE tmhs set
+                                                nim = '$_POST[tnim]',
+                                                nama = '$_POST[tnama]',
+                                                alamat = '$_POST[talamat]',
+                                                prodi = '$_POST[tprodi]'
+                                            WHERE id_mhs = '$_GET[id]'
+                                            ");
+    
+                if($edit) 
+                {                           // jika edit sukses
+                    echo "<script>  
+                    alert('Edit Data Sukses');
+                    document.location='index.php';
+                    </script>";
+                }
+                else
+                {                              // jika edit gagal
+                    echo "<script>
+                    alert('Edit Data Gagal');
+                    document.location='index.php';
+                    </script>";
+                };
+
+        } 
+        else 
+        {
+            // data akan disimpan baru
+            $simpan = mysqli_query($koneksi, "INSERT INTO tmhs (nim, nama, alamat, prodi)
                                         VALUES  ('$_POST[tnim]', 
                                                 '$_POST[tnama]', 
                                                 '$_POST[talamat]',
                                                 '$_POST[tprodi]')
                                                 ");
-    if($simpan) 
-    {                           // jika simpan sukses
-        echo "<script>  
-            alert('Simpan Data Sukses');
-            document.location='index.php';
-        </script>";
-    }
-    else
-    {                              // jika simpan gagal
-        echo "<script>
-            alert('Simpan Data Gagal');
-            document.location='index.php';
-        </script>";
-    };
+    
+                if($simpan) 
+                {                           // jika simpan sukses
+                    echo "<script>  
+                    alert('Simpan Data Sukses');
+                    document.location='index.php';
+                    </script>";
+                }
+                else
+                {                              // jika simpan gagal
+                    echo "<script>
+                    alert('Simpan Data Gagal');
+                    document.location='index.php';
+                    </script>";
+                };
+        }
 
+
+
+    
 }
 
+// penguian jka tombol edit dihapus / diklik 
+    if(isset($_GET['hal'])) 
+    {
+
+        // pemgujian jika edit data 
+        if($_GET['hal'] == "edit") 
+        {
+            // tampilkan data yang akan diedt 
+            $tampil = mysqli_query($koneksi, "SELECT * FROM tmhs WHERE id_mhs = '$_GET[id]' ");
+            $data = mysqli_fetch_array($tampil);
+            if($data)
+            {
+                // jika data ditemukan, maka tampung ke dalam variabel 
+                $vnim = $data['nim'];
+                $vnama = $data ['nama'];
+                $valamat = $data ['alamat'];
+                $vprodi = $data ['prodi'];
+            }
+        }
+        else if ($_GET['hal'] == "hapus")
+        {
+            // persiapan menghapus data 
+            $hapus = mysqli_query($koneksi, "DELETE FROM tmhs WHERE id_mhs = '$_GET[id]' ");
+            if($hapus)
+            {
+                echo "<script>
+                    alert('Hapus Data Sukses');
+                    document.location='index.php';
+                    </script>";
+            }
+        }
+        
+    }
 ?>
 
 
@@ -62,23 +139,23 @@ if(isset($_POST['bsimpan]']))
 
             <div class="form-group mt-3">
                 <label">Nim</label>
-                <input type="text" name="tnim" class="form-control mt-2" 
+                <input type="text" name="tnim" value="<?=@$vnim?>" class="form-control mt-2" 
                 placeholder="Input Nim Anda disini!" required>
             </div>
             <div class="form-group mt-3">
                 <label">Nama</label>
-                <input type="text" name="tnama" class="form-control mt-2" 
+                <input type="text" name="tnama" value="<?=@$vnama?>" class="form-control mt-2" 
                 placeholder="Input Nama Anda disini!" required>
             </div>
             <div class="form-group mt-3">
                 <label">Alamat</label>
                 <textarea class="form-control mt-2" name="talamat" 
-                placeholder="Input Alamat Anda disini!" required></textarea>
+                placeholder="Input Alamat Anda disini!" required><?=@$valamat?></textarea>
             </div>
             <div class="form-group mt-3">
                 <label">Program Studi</label>
                 <select class="form-control mt-2" name="tprodi">
-                    <option></option>
+                    <option value="<?=@$vprodi?>"><?=@$vprodi?></option>
                     <option value="D3-MI">D3-MI</option>
                     <option value="S1-SI">S1-SI</option>
                     <option value="S1-TI">S1-TI</option>
@@ -86,7 +163,7 @@ if(isset($_POST['bsimpan]']))
             </div>
 
 
-            <button type="submit" class="btn-success mt-3" name="bsimpan" >Simpan</button>
+            <button type="submit" class="btn-success mt-3" name="bsimpan" value="bsimpan" >Simpan</button>
             <button type="reset" class="btn-danger mt-3" name="breset" >Kosongkan</button>
 
             </form>
@@ -127,8 +204,9 @@ if(isset($_POST['bsimpan]']))
                 <td><?=$data['alamat']?></td>
                 <td><?=$data['prodi']?></td>
                 <td>
-                    <a href="#" class="btn btn-warning"> Edit </a>
-                    <a href="#" class="btn btn-danger"> Hapus </a>
+                    <a href="index.php?hal=edit&id=<?=$data['id_mhs']?>" class="btn btn-warning"> Edit </a>
+                    <a href="index.php?hal=hapus&id<?=$data['id_mhs']?>" 
+                    onclick="return confirm('Apakah yakin ingin menghapus data ini?')" class="btn btn-danger"> Hapus </a>
                 </td>
             </tr>
 
